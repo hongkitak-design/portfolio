@@ -26,6 +26,17 @@ import { BLOCK_LABELS, createBlock, newId, sampleImage } from "@/lib/templates";
 
 type Update = (patch: Partial<Block>) => void;
 
+const newSlide = (image: string) => ({
+  id: newId(),
+  badge: "NEW",
+  title: "새 슬라이드",
+  description: "",
+  image,
+  accent: "#ff153c",
+});
+
+const newWork = (image: string) => ({ id: newId(), title: "새 작업", description: "", image, meta: "" });
+
 function BlockFields({ block, update }: { block: Block; update: Update }) {
   switch (block.type) {
     case "hero":
@@ -37,17 +48,15 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
             onChange={(slides) => update({ slides })}
             addLabel="슬라이드 추가"
             itemTitle={(s, i) => `${i + 1}. ${s.title.replace(/\n/g, " ") || "(제목 없음)"}`}
-            onAdd={() => ({
-              id: newId(),
-              badge: "NEW",
-              title: "새 슬라이드",
-              description: "",
-              image: sampleImage(newId().slice(0, 8), 1600, 700),
-              accent: "#ff153c",
-            })}
+            onAdd={() => newSlide(sampleImage(newId().slice(0, 8), 1600, 700))}
+            fromImage={newSlide}
             renderItem={(s, set) => (
               <>
-                <ImageField label="이미지 (가로 1600px 이상 권장)" value={s.image} onChange={(image) => set({ image })} />
+                <ImageField
+                  label="이미지 (가로 1600px 이상 권장)"
+                  value={s.image}
+                  onChange={(image) => set({ image })}
+                />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextInput label="작은 제목 (뱃지)" value={s.badge} onChange={(badge) => set({ badge })} />
                   <ColorInput label="배경 색" value={s.accent} onChange={(accent) => set({ accent })} />
@@ -69,7 +78,9 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
       return (
         <>
           <TextInput label="제목 (비워두면 숨김)" value={block.title} onChange={(title) => update({ title })} />
-          <p className="text-xs text-neutral-500">카테고리 목록이 순서대로 원형 메뉴로 나옵니다. 이미지는 각 카테고리 설정에서 바꿉니다.</p>
+          <p className="text-xs text-neutral-500">
+            카테고리 목록이 순서대로 원형 메뉴로 나옵니다. 이미지는 각 카테고리 설정에서 바꿉니다.
+          </p>
         </>
       );
     case "categoryRows":
@@ -92,7 +103,14 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
           <TextInput
             label="키워드 (쉼표로 구분)"
             value={block.keywords.join(", ")}
-            onChange={(v) => update({ keywords: v.split(",").map((k) => k.trim()).filter(Boolean) })}
+            onChange={(v) =>
+              update({
+                keywords: v
+                  .split(",")
+                  .map((k) => k.trim())
+                  .filter(Boolean),
+              })
+            }
           />
         </>
       );
@@ -106,6 +124,7 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
             addLabel="배너 추가"
             itemTitle={(b, i) => `${i + 1}. ${b.title || "(제목 없음)"}`}
             onAdd={() => ({ id: newId(), title: "새 배너", image: sampleImage(newId().slice(0, 8), 600, 600) })}
+            fromImage={(image) => ({ id: newId(), title: "새 배너", image })}
             renderItem={(b, set) => (
               <>
                 <ImageField label="이미지" aspect="aspect-[4/5]" value={b.image} onChange={(image) => set({ image })} />
@@ -133,16 +152,16 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
             onChange={(items) => update({ items })}
             addLabel="작업 추가"
             itemTitle={(w, i) => `${i + 1}. ${w.title || "(제목 없음)"}${w.tag ? ` · ${w.tag}` : ""}`}
-            onAdd={() => ({
-              id: newId(),
-              title: "새 작업",
-              description: "",
-              image: sampleImage(newId().slice(0, 8), 600, 600),
-              meta: "",
-            })}
+            onAdd={() => newWork(sampleImage(newId().slice(0, 8), 600, 600))}
+            fromImage={newWork}
             renderItem={(w, set) => (
               <>
-                <ImageField label="이미지 (정사각형 권장)" aspect="aspect-square" value={w.image} onChange={(image) => set({ image })} />
+                <ImageField
+                  label="이미지 (정사각형 권장)"
+                  aspect="aspect-square"
+                  value={w.image}
+                  onChange={(image) => set({ image })}
+                />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextInput label="작업명" value={w.title} onChange={(title) => set({ title })} />
                   <TextInput label="분류 / 연도" value={w.meta} onChange={(meta) => set({ meta })} />
@@ -172,7 +191,12 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
           <TextInput label="제목" value={block.title} onChange={(title) => update({ title })} />
           <TextArea label="본문" rows={5} value={block.body} onChange={(body) => update({ body })} />
           {block.layout === "split" && (
-            <ImageField label="이미지" aspect="aspect-square" value={block.image} onChange={(image) => update({ image })} />
+            <ImageField
+              label="이미지"
+              aspect="aspect-square"
+              value={block.image}
+              onChange={(image) => update({ image })}
+            />
           )}
         </>
       );
@@ -199,12 +223,19 @@ export default function BlockEditor({
   blocks,
   onChange,
   allowed,
+  onFocus,
 }: {
   blocks: Block[];
   onChange: (blocks: Block[]) => void;
   allowed: BlockType[];
+  /** 펼친 블록이 바뀌면 알려줍니다 (미리보기가 그 블록으로 스크롤) */
+  onFocus?: (id: string | null) => void;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpenState] = useState<string | null>(null);
+  const setOpen = (id: string | null) => {
+    setOpenState(id);
+    onFocus?.(id);
+  };
   const [adding, setAdding] = useState(false);
 
   const updateBlock = (id: string, patch: Partial<Block>) =>
@@ -251,7 +282,11 @@ export default function BlockEditor({
               <IconButton label="위로" disabled={i === 0} onClick={() => onChange(move(blocks, i, i - 1))}>
                 ↑
               </IconButton>
-              <IconButton label="아래로" disabled={i === blocks.length - 1} onClick={() => onChange(move(blocks, i, i + 1))}>
+              <IconButton
+                label="아래로"
+                disabled={i === blocks.length - 1}
+                onClick={() => onChange(move(blocks, i, i + 1))}
+              >
                 ↓
               </IconButton>
               <IconButton label="복제" onClick={() => duplicate(i)}>

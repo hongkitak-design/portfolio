@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { uploadImage } from "@/app/admin/editor/upload";
+import { ImagePicker, useImageLibrary } from "@/app/admin/editor/library";
 import { LAYOUT_LABELS } from "@/lib/templates";
 
 const inputClass =
@@ -32,7 +32,12 @@ export function TextInput({
 }) {
   return (
     <Field label={label} hint={hint}>
-      <input className={inputClass} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <input
+        className={inputClass}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </Field>
   );
 }
@@ -57,7 +62,15 @@ export function TextArea({
   );
 }
 
-export function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+export function ColorInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <Field label={label}>
       <div className="flex items-center gap-2">
@@ -73,7 +86,15 @@ export function ColorInput({ label, value, onChange }: { label: string; value: s
   );
 }
 
-export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <button
       type="button"
@@ -165,16 +186,18 @@ export function ImageField({
   aspect?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { upload } = useImageLibrary();
+  const [picking, setPicking] = useState(false);
   const [status, setStatus] = useState<{ busy: boolean; error?: string }>({ busy: false });
 
+  // 올린 파일은 보관함에도 들어가서 다른 곳에서 다시 고를 수 있습니다
   async function handleFile(file: File) {
     setStatus({ busy: true });
-    try {
-      onChange(await uploadImage(file));
+    const [url] = await upload([file]);
+    if (url) {
+      onChange(url);
       setStatus({ busy: false });
-    } catch (error) {
-      setStatus({ busy: false, error: error instanceof Error ? error.message : "업로드 실패" });
-    }
+    } else setStatus({ busy: false, error: "업로드에 실패했습니다" });
   }
 
   return (
@@ -208,14 +231,23 @@ export function ImageField({
             placeholder="이미지 주소 또는 업로드"
             onChange={(e) => onChange(e.target.value)}
           />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={status.busy}
-            className="self-start rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-semibold hover:bg-neutral-700 active:scale-95 disabled:opacity-50"
-          >
-            {status.busy ? "업로드 중…" : "파일 올리기"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-semibold hover:bg-neutral-700 active:scale-95"
+            >
+              보관함에서 선택
+            </button>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={status.busy}
+              className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-semibold hover:bg-neutral-700 active:scale-95 disabled:opacity-50"
+            >
+              {status.busy ? "업로드 중…" : "파일 올리기"}
+            </button>
+          </div>
           {status.error && <span className="text-[11px] text-red-400">{status.error}</span>}
         </div>
       </div>
@@ -230,6 +262,7 @@ export function ImageField({
           e.target.value = "";
         }}
       />
+      <ImagePicker open={picking} onClose={() => setPicking(false)} onSelect={([url]) => url && onChange(url)} />
     </Field>
   );
 }
@@ -367,15 +400,19 @@ export function ListEditor<T extends { id: string }>({
   addLabel,
   renderItem,
   itemTitle,
+  fromImage,
 }: {
   items: T[];
   onChange: (items: T[]) => void;
   onAdd: () => NoInfer<T>;
+  /** 있으면 '이미지로 여러 개 추가' 버튼이 생깁니다: 고른 이미지마다 항목을 하나씩 만듭니다 */
+  fromImage?: (url: string) => NoInfer<T>;
   addLabel: string;
   renderItem: (item: T, update: (patch: Partial<T>) => void) => ReactNode;
   itemTitle: (item: T, index: number) => string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   return (
     <div className="flex flex-col gap-2">
       {items.map((item, i) => {
@@ -395,7 +432,11 @@ export function ListEditor<T extends { id: string }>({
               <IconButton label="위로" disabled={i === 0} onClick={() => onChange(move(items, i, i - 1))}>
                 ↑
               </IconButton>
-              <IconButton label="아래로" disabled={i === items.length - 1} onClick={() => onChange(move(items, i, i + 1))}>
+              <IconButton
+                label="아래로"
+                disabled={i === items.length - 1}
+                onClick={() => onChange(move(items, i, i + 1))}
+              >
                 ↓
               </IconButton>
               <IconButton label="삭제" danger onClick={() => onChange(items.filter((x) => x.id !== item.id))}>
@@ -410,17 +451,36 @@ export function ListEditor<T extends { id: string }>({
           </div>
         );
       })}
-      <button
-        type="button"
-        onClick={() => {
-          const item = onAdd();
-          onChange([...items, item]);
-          setOpen(item.id);
-        }}
-        className="rounded-lg border border-dashed border-neutral-700 py-2 text-xs text-neutral-400 transition hover:border-neutral-500 hover:text-white active:scale-[0.99]"
-      >
-        + {addLabel}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            const item = onAdd();
+            onChange([...items, item]);
+            setOpen(item.id);
+          }}
+          className="flex-1 rounded-lg border border-dashed border-neutral-700 py-2 text-xs text-neutral-400 transition hover:border-neutral-500 hover:text-white active:scale-[0.99]"
+        >
+          + {addLabel}
+        </button>
+        {fromImage && (
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="flex-1 rounded-lg border border-dashed border-neutral-700 py-2 text-xs text-neutral-400 transition hover:border-neutral-500 hover:text-white active:scale-[0.99]"
+          >
+            + 이미지로 여러 개 추가
+          </button>
+        )}
+      </div>
+      {fromImage && (
+        <ImagePicker
+          open={picking}
+          multiple
+          onClose={() => setPicking(false)}
+          onSelect={(urls) => onChange([...items, ...urls.map(fromImage)])}
+        />
+      )}
     </div>
   );
 }

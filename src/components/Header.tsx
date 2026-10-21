@@ -11,10 +11,13 @@ type Props = {
   name: string;
   email: string;
   menu: { slug: string; label: string }[];
+  /** 설정 화면 미리보기처럼 실제 주소와 보여줄 페이지가 다를 때 지정합니다 */
+  activePath?: string;
 };
 
-export default function Header({ logo, name, email, menu }: Props) {
-  const pathname = usePathname();
+export default function Header({ logo, name, email, menu, activePath }: Props) {
+  const currentPath = usePathname();
+  const pathname = activePath ?? currentPath;
   const [scrolled, setScrolled] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
 

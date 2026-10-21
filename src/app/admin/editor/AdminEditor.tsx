@@ -1,32 +1,51 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { EyeIcon } from "@phosphor-icons/react";
 import { logout, resetConfig, saveConfig } from "@/app/admin/actions";
 import BlockEditor from "@/app/admin/editor/BlockEditor";
-import {
-  ColorInput,
-  ConfirmButton,
-  IconButton,
-  ImageField,
-  TextInput,
-  Toggle,
-  move,
-} from "@/app/admin/editor/fields";
-import type { BlockType, Category, SiteConfig } from "@/lib/schema";
+import ImagesPanel from "@/app/admin/editor/ImagesPanel";
+import PreviewPane from "@/app/admin/editor/PreviewPane";
+import { ImageLibraryProvider } from "@/app/admin/editor/library";
+import type { PreviewPage } from "@/app/admin/editor/preview";
+import { ColorInput, ConfirmButton, IconButton, ImageField, TextInput, Toggle, move } from "@/app/admin/editor/fields";
+import { replaceImageRefs } from "@/lib/imageRefs";
+import type { Block, BlockType, Category, SiteConfig } from "@/lib/schema";
 import { buildTemplate, newId, PAGE_TEMPLATES, sampleImage, type PageTemplate } from "@/lib/templates";
 import type { StorageMode } from "@/lib/store";
 
-type View = { kind: "site" } | { kind: "home" } | { kind: "category"; id: string };
+type View = { kind: "site" } | { kind: "home" } | { kind: "images" } | { kind: "category"; id: string };
+
+type TemplatePreview = { label: string; blocks: Block[] };
 
 const HOME_BLOCKS: BlockType[] = ["hero", "circles", "categoryRows", "keywords", "banners", "works", "text"];
 const CATEGORY_BLOCKS: BlockType[] = ["hero", "keywords", "banners", "works", "text", "circles"];
 
 type Props = { initialConfig: SiteConfig; storage: StorageMode; blob: boolean };
 
-export default function AdminEditor({ initialConfig, storage, blob }: Props) {
+export default function AdminEditor(props: Props) {
+  return (
+    <ImageLibraryProvider>
+      <Editor {...props} />
+    </ImageLibraryProvider>
+  );
+}
+
+function Editor({ initialConfig, storage, blob }: Props) {
   const [saved, setSaved] = useState(initialConfig);
   const [config, setConfig] = useState(initialConfig);
-  const [view, setView] = useState<View>({ kind: "home" });
+  const [view, setViewState] = useState<View>({ kind: "home" });
+  const [focus, setFocus] = useState<string | null>(null);
+  const [templatePreview, setTemplatePreview] = useState<TemplatePreview | null>(null);
+  // 넓은 화면에선 오른쪽에 붙여 두고, 좁은 화면에선 버튼으로 전체 화면으로 엽니다
+  const [previewDocked, setPreviewDocked] = useState(true);
+  const [previewOverlay, setPreviewOverlay] = useState(false);
+
+  const setView = useCallback((next: View) => {
+    setViewState(next);
+    setFocus(null);
+    setTemplatePreview(null);
+  }, []);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -97,6 +116,40 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
 
   const current = view.kind === "category" ? config.categories.find((c) => c.id === view.id) : undefined;
   const previewHref = view.kind === "category" && current ? `/${current.slug}` : "/";
+  const previewPage = useMemo<PreviewPage>(
+    () => (current ? { kind: "category", id: current.id } : { kind: "home" }),
+    [current],
+  );
+
+  // 미리보기 안에서 메뉴·카드를 누르면 그 페이지 편집 화면으로 바꿉니다
+  const navigateFromPreview = useCallback(
+    (href: string) => {
+      if (href === "/") return setView({ kind: "home" });
+      const target = config.categories.find((c) => `/${c.slug}` === href);
+      if (target) setView({ kind: "category", id: target.id });
+    },
+    [config.categories, setView],
+  );
+
+  const notify = useCallback((type: "ok" | "error", text: string) => setMessage({ type, text }), []);
+
+  const togglePreview = () => {
+    if (window.matchMedia("(min-width: 1280px)").matches) setPreviewDocked((v) => !v);
+    else setPreviewOverlay((v) => !v);
+  };
+
+  const preview = (onClose?: () => void) => (
+    <PreviewPane
+      config={config}
+      page={previewPage}
+      blocks={templatePreview?.blocks}
+      focus={focus}
+      label={current ? current.label : "홈"}
+      note={templatePreview ? `‘${templatePreview.label}’ 템플릿 · 적용 전` : undefined}
+      onNavigate={navigateFromPreview}
+      onClose={onClose}
+    />
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -107,7 +160,11 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
           className={`rounded-full px-2 py-0.5 text-[11px] ${
             storage === "database" ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
           }`}
-          title={storage === "database" ? "Neon Postgres 에 저장됩니다" : "DB 미연결: 이 컴퓨터의 .data/site.json 에 저장됩니다"}
+          title={
+            storage === "database"
+              ? "Neon Postgres 에 저장됩니다"
+              : "DB 미연결: 이 컴퓨터의 .data/site.json 에 저장됩니다"
+          }
         >
           {storage === "database" ? "DB 연결됨" : "로컬 파일 저장"}
         </span>
@@ -124,6 +181,14 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
             </span>
           )}
           {dirty && !message && <span className="text-xs text-amber-300">저장 안 된 변경사항</span>}
+          <button
+            type="button"
+            onClick={togglePreview}
+            aria-pressed={previewDocked}
+            className="flex items-center gap-1.5 rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-semibold hover:bg-neutral-700"
+          >
+            <EyeIcon size={14} /> 미리보기
+          </button>
           <a
             href={previewHref}
             target="_blank"
@@ -167,13 +232,17 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
           <NavButton active={view.kind === "home"} onClick={() => setView({ kind: "home" })}>
             홈 화면
           </NavButton>
+          <NavButton active={view.kind === "images"} onClick={() => setView({ kind: "images" })}>
+            이미지 보관함
+          </NavButton>
           <p className="mt-4 mb-1 px-2 text-[11px] font-semibold text-neutral-500">카테고리 (상단 메뉴 순서)</p>
           {config.categories.map((c, i) => (
             <div key={c.id} className="flex items-center">
               <NavButton
                 className="flex-1"
                 active={view.kind === "category" && view.id === c.id}
-                onClick={() => setView({ kind: "category", id: c.id })}>
+                onClick={() => setView({ kind: "category", id: c.id })}
+              >
                 <span className={c.visible ? "" : "text-neutral-500 line-through"}>{c.label}</span>
               </NavButton>
               <IconButton
@@ -263,11 +332,15 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
             )}
 
             {view.kind === "home" && (
-              <Panel title="홈 화면" description="블록 순서대로 홈 화면에 나옵니다. ↑↓ 로 순서를, 블록을 펼쳐 레이아웃과 내용을 바꿉니다.">
+              <Panel
+                title="홈 화면"
+                description="블록 순서대로 홈 화면에 나옵니다. ↑↓ 로 순서를, 블록을 펼쳐 레이아웃과 내용을 바꿉니다."
+              >
                 <BlockEditor
                   blocks={config.home.blocks}
                   allowed={HOME_BLOCKS}
                   onChange={(blocks) => setConfig((c) => ({ ...c, home: { blocks } }))}
+                  onFocus={setFocus}
                 />
               </Panel>
             )}
@@ -281,11 +354,32 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
                   setConfig((c) => ({ ...c, categories: c.categories.filter((x) => x.id !== current.id) }));
                   setView({ kind: "home" });
                 }}
+                onFocus={setFocus}
+                onTemplatePreview={setTemplatePreview}
+              />
+            )}
+
+            {view.kind === "images" && (
+              <ImagesPanel
+                config={config}
+                savedConfig={saved}
+                notify={notify}
+                onReplace={(from, to) => setConfig((c) => replaceImageRefs(c, from, to))}
               />
             )}
           </div>
         </main>
+
+        {previewDocked && (
+          <aside className="sticky top-[57px] hidden h-[calc(100dvh-57px)] w-[42%] max-w-[760px] shrink-0 border-l border-neutral-800 xl:block">
+            {preview()}
+          </aside>
+        )}
       </div>
+
+      {previewOverlay && (
+        <div className="fixed inset-0 z-30 bg-neutral-950 xl:hidden">{preview(() => setPreviewOverlay(false))}</div>
+      )}
     </div>
   );
 }
@@ -330,12 +424,38 @@ function CategoryPanel({
   category,
   onChange,
   onDelete,
+  onFocus,
+  onTemplatePreview,
 }: {
   category: Category;
   onChange: (patch: Partial<Category>) => void;
   onDelete: () => void;
+  onFocus: (id: string | null) => void;
+  onTemplatePreview: (preview: TemplatePreview | null) => void;
 }) {
-  const [template, setTemplate] = useState<PageTemplate>("shop");
+  const [template, setTemplate] = useState<PageTemplate | null>(null);
+  const [draft, setDraft] = useState<Block[] | null>(null);
+
+  // 템플릿 카드를 고르면 적용하기 전에 미리보기로 먼저 보여줍니다
+  const pick = (key: PageTemplate) => {
+    const keywords = category.blocks.flatMap((b) => (b.type === "keywords" ? b.keywords : []));
+    const blocks = buildTemplate(key, {
+      label: category.label,
+      seed: `${category.slug}-${newId().slice(0, 8)}`,
+      keywords: keywords.length ? keywords : ["키워드1", "키워드2", "키워드3"],
+      metas: keywords.length ? keywords : ["분류"],
+      accent: "#ff153c",
+    });
+    setTemplate(key);
+    setDraft(blocks);
+    onTemplatePreview({ label: PAGE_TEMPLATES[key].label, blocks });
+  };
+
+  const cancel = () => {
+    setTemplate(null);
+    setDraft(null);
+    onTemplatePreview(null);
+  };
 
   return (
     <Panel title={category.label || "(이름 없음)"} description="상단 메뉴에 나오는 카테고리 페이지입니다.">
@@ -381,7 +501,7 @@ function CategoryPanel({
             <button
               key={key}
               type="button"
-              onClick={() => setTemplate(key)}
+              onClick={() => (template === key ? cancel() : pick(key))}
               aria-pressed={template === key}
               className={`rounded-lg border p-3 text-left transition active:scale-[0.98] ${
                 template === key ? "border-point bg-point/10" : "border-neutral-700 hover:border-neutral-500"
@@ -392,30 +512,36 @@ function CategoryPanel({
             </button>
           ))}
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <ConfirmButton
-            label={`'${PAGE_TEMPLATES[template].label}' 적용`}
-            confirmLabel="지금 블록이 모두 바뀝니다. 한 번 더 누르기"
-            onConfirm={() => {
-              const keywords = category.blocks.flatMap((b) => (b.type === "keywords" ? b.keywords : []));
-              onChange({
-                blocks: buildTemplate(template, {
-                  label: category.label,
-                  seed: `${category.slug}-${Date.now()}`,
-                  keywords: keywords.length ? keywords : ["키워드1", "키워드2", "키워드3"],
-                  metas: keywords.length ? keywords : ["분류"],
-                  accent: "#ff153c",
-                }),
-              });
-            }}
-          />
-          <span className="text-xs text-neutral-500">적용 후에도 저장 전까지는 ‘되돌리기’로 취소할 수 있습니다.</span>
-        </div>
+        {template && draft ? (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <ConfirmButton
+              label={`'${PAGE_TEMPLATES[template].label}' 적용`}
+              confirmLabel="지금 블록이 모두 바뀝니다. 한 번 더 누르기"
+              onConfirm={() => {
+                onChange({ blocks: draft });
+                cancel();
+              }}
+            />
+            <button type="button" onClick={cancel} className="text-xs text-neutral-400 hover:text-white">
+              미리보기 취소
+            </button>
+            <span className="text-xs text-neutral-500">
+              오른쪽 미리보기에서 먼저 확인하세요. 적용 후에도 저장 전까진 ‘되돌리기’로 취소됩니다.
+            </span>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-neutral-500">템플릿을 고르면 적용하기 전에 미리보기로 먼저 보여줍니다.</p>
+        )}
       </div>
 
       <div>
         <p className="mb-3 text-sm font-semibold">페이지 블록</p>
-        <BlockEditor blocks={category.blocks} allowed={CATEGORY_BLOCKS} onChange={(blocks) => onChange({ blocks })} />
+        <BlockEditor
+          blocks={category.blocks}
+          allowed={CATEGORY_BLOCKS}
+          onChange={(blocks) => onChange({ blocks })}
+          onFocus={onFocus}
+        />
       </div>
     </Panel>
   );
