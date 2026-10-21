@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BELLKONG Portfolio",
-  description: "BELLKONG 디자인 포트폴리오",
+  title: "NEXTU Portfolio",
+  description: "NEXTU 디자인 포트폴리오",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

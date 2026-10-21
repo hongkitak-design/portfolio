@@ -3,7 +3,8 @@ export const sampleImage = (seed: string, width: number, height: number) =>
   `https://picsum.photos/seed/${seed}/${width}/${height}`;
 
 export const profile = {
-  name: "BELLKONG",
+  name: "NEXTU",
+  logo: "/logo-dark.png",
   role: "Designer",
   email: "gthong94@naver.com",
   github: "https://github.com/hongkitak-design",
@@ -67,7 +68,7 @@ export const categories: Category[] = [
     slides: [
       {
         badge: "PROFILE",
-        title: "안녕하세요,\n디자이너 BELLKONG입니다",
+        title: "안녕하세요,\n디자이너 OOO입니다",
         description: "브랜드와 사용자를 잇는 디자인을 합니다",
         image: sampleImage("about-hero-1", 1600, 700),
         accent: "#ff153c",

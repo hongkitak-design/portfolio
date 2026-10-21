@@ -13,7 +13,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/[slug]">) {
   const { slug } = await params;
   const category = getCategory(slug);
-  return { title: category ? `${category.label} | BELLKONG` : "BELLKONG" };
+  return { title: category ? `${category.label} | NEXTU` : "NEXTU" };
 }
 
 type Params = PageProps<"/[slug]">["params"];

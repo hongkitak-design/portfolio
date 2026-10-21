@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,8 +25,8 @@ export default function Header() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-8 px-4 sm:px-6">
-        <Link href="/" className="shrink-0 text-2xl font-black tracking-tighter text-point italic">
-          {profile.name}
+        <Link href="/" className="shrink-0 transition active:scale-95">
+          <Image src={profile.logo} alt={profile.name} width={3199} height={586} priority className="h-7 w-auto" />
         </Link>
         <nav className="scrollbar-none flex flex-1 items-center gap-5 overflow-x-auto sm:gap-7">
           {categories.map((c) => {
