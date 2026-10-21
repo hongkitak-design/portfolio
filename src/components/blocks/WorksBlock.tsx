@@ -6,8 +6,8 @@ import type { BlockOf } from "@/lib/schema";
 export default function WorksBlock({ block }: { block: BlockOf<"works"> }) {
   const { items } = block;
   return (
-    <section className="mx-auto mt-24 max-w-[1400px] px-4 sm:px-6">
-      <SectionTitle title={block.title} subtitle={block.subtitle} />
+    <section className="mx-auto mt-20 max-w-[1400px] px-4 sm:mt-28 sm:px-6">
+      <SectionTitle title={block.title} subtitle={block.subtitle} align={block.layout === "list" ? "center" : "left"} />
 
       {block.layout === "grid4" && (
         <ul className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-4">
@@ -53,18 +53,20 @@ export default function WorksBlock({ block }: { block: BlockOf<"works"> }) {
       )}
 
       {block.layout === "list" && (
-        <ul className="mx-auto max-w-3xl divide-y divide-neutral-800 border-y border-neutral-800">
+        <ul className="mx-auto max-w-3xl divide-y divide-white/10">
           {items.map((work) => (
             <li key={work.id} className="flex items-center gap-5 py-5">
-              <span className="relative block h-20 w-20 shrink-0 overflow-hidden rounded-lg sm:h-24 sm:w-24">
+              <span className="relative block h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-900 sm:h-24 sm:w-24">
                 <SmartImage src={work.image} fill sizes="96px" className="object-cover" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-point">{work.meta}</p>
-                <h3 className="mt-1 font-bold">{work.title}</h3>
+                <h3 className="mt-1 font-bold tracking-tight">{work.title}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-neutral-400">{work.description}</p>
               </div>
-              {work.tag && <span className="rounded bg-point px-2 py-0.5 text-[11px] font-black">{work.tag}</span>}
+              {work.tag && (
+                <span className="shrink-0 rounded-full bg-point px-2.5 py-0.5 text-[11px] font-black">{work.tag}</span>
+              )}
             </li>
           ))}
         </ul>

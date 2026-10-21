@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { getSiteConfig } from "@/lib/store";
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 
 const geistSans = Geist({

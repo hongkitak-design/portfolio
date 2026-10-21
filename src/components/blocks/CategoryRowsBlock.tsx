@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SectionTitle from "@/components/SectionTitle";
 import SmartImage from "@/components/SmartImage";
 import type { BlockOf, Category } from "@/lib/schema";
 
@@ -16,24 +17,17 @@ export default function CategoryRowsBlock({
       {categories
         .filter((c) => c.visible)
         .map((c) => {
-          const works = c.blocks
-            .flatMap((b) => (b.type === "works" && b.visible ? b.items : []))
-            .slice(0, block.limit);
+          const works = c.blocks.flatMap((b) => (b.type === "works" && b.visible ? b.items : [])).slice(0, block.limit);
           if (!works.length) return null;
           return (
-            <section key={c.id} className="mx-auto mt-14 max-w-[1400px] px-4 sm:px-6">
-              <div className="mb-4 flex items-end justify-between">
-                <h2 className="text-xl font-bold">{c.label}</h2>
-                <Link href={`/${c.slug}`} className="text-sm text-neutral-400 hover:text-white">
-                  전체보기 ›
-                </Link>
-              </div>
+            <section key={c.id} className="mx-auto mt-14 max-w-[1400px] px-4 sm:mt-16 sm:px-6">
+              <SectionTitle title={c.label} more={`/${c.slug}`} />
               <ul className="scrollbar-none flex gap-3 overflow-x-auto pb-2">
                 {works.map((work) => (
                   <li key={work.id} className={`shrink-0 ${poster ? "w-36 sm:w-44" : "w-56 sm:w-64"}`}>
-                    <Link href={`/${c.slug}`} className="group block">
+                    <Link href={`/${c.slug}`} className="group block rounded-xl transition active:scale-[0.98]">
                       <div
-                        className={`relative overflow-hidden rounded-lg bg-neutral-900 ${
+                        className={`relative overflow-hidden rounded-xl bg-neutral-900 ${
                           poster ? "aspect-[2/3]" : "aspect-video"
                         }`}
                       >
@@ -44,7 +38,9 @@ export default function CategoryRowsBlock({
                           className="object-cover transition duration-300 group-hover:scale-105"
                         />
                       </div>
-                      <p className="mt-2 truncate text-sm text-neutral-300 group-hover:text-white">{work.title}</p>
+                      <p className="mt-2 truncate text-sm text-neutral-400 transition-colors group-hover:text-white">
+                        {work.title}
+                      </p>
                     </Link>
                   </li>
                 ))}

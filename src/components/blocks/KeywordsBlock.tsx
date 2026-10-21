@@ -4,18 +4,13 @@ import type { BlockOf } from "@/lib/schema";
 export default function KeywordsBlock({ block }: { block: BlockOf<"keywords"> }) {
   const left = block.layout === "left";
   return (
-    <section className="mx-auto mt-20 max-w-[1400px] px-4 sm:px-6">
-      {left ? (
-        <h2 className="mb-6 text-2xl font-bold sm:text-3xl">{block.title}</h2>
-      ) : (
-        <SectionTitle title={block.title} />
-      )}
+    <section className="mx-auto mt-20 max-w-[1400px] px-4 sm:mt-28 sm:px-6">
+      <SectionTitle title={block.title} align={left ? "left" : "center"} />
       <div className={`flex flex-wrap items-center gap-2 ${left ? "" : "justify-center"}`}>
-        <span className="mr-1 text-sm text-neutral-500"># 키워드</span>
         {block.keywords.map((keyword) => (
           <span
             key={keyword}
-            className="rounded-full bg-neutral-800 px-4 py-1.5 text-sm text-neutral-200 transition hover:bg-point"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-neutral-200"
           >
             {keyword}
           </span>
