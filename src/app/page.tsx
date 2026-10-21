@@ -1,68 +1,45 @@
-import { profile, projects, skills } from "@/data/portfolio";
+import Image from "next/image";
+import Link from "next/link";
+import CategoryCircles from "@/components/CategoryCircles";
+import HeroSlider from "@/components/HeroSlider";
+import { categories, homeSlides } from "@/data/portfolio";
 
 export default function Home() {
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-20">
-      <section className="mb-24">
-        <p className="mb-3 text-sm font-medium tracking-widest text-neutral-500 uppercase">
-          {profile.role}
-        </p>
-        <h1 className="mb-6 text-5xl font-bold tracking-tight">{profile.name}</h1>
-        <p className="text-lg text-neutral-600 dark:text-neutral-400">{profile.intro}</p>
-      </section>
+    <>
+      <div className="pt-4">
+        <HeroSlider slides={homeSlides} />
+      </div>
+      <CategoryCircles />
 
-      <section id="projects" className="mb-24">
-        <h2 className="mb-8 text-2xl font-semibold">Projects</h2>
-        <ul className="grid gap-6 sm:grid-cols-2">
-          {projects.map((project) => (
-            <li
-              key={project.title}
-              className="rounded-2xl border border-neutral-200 p-6 transition hover:border-neutral-400 dark:border-neutral-800 dark:hover:border-neutral-600"
-            >
-              <h3 className="mb-2 text-lg font-semibold">{project.title}</h3>
-              <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-                {project.description}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {project.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-neutral-100 px-3 py-1 text-xs dark:bg-neutral-800"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="skills" className="mb-24">
-        <h2 className="mb-8 text-2xl font-semibold">Skills</h2>
-        <div className="flex flex-wrap gap-3">
-          {skills.map((skill) => (
-            <span
-              key={skill}
-              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm dark:border-neutral-800"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section id="contact">
-        <h2 className="mb-8 text-2xl font-semibold">Contact</h2>
-        <div className="flex flex-col gap-2 text-neutral-600 dark:text-neutral-400">
-          <a href={`mailto:${profile.email}`} className="hover:underline">
-            {profile.email}
-          </a>
-          <a href={profile.github} target="_blank" rel="noreferrer" className="hover:underline">
-            GitHub
-          </a>
-        </div>
-      </section>
-    </main>
+      {categories.map((c) => (
+        <section key={c.slug} className="mx-auto mt-14 max-w-[1400px] px-4 sm:px-6">
+          <div className="mb-4 flex items-end justify-between">
+            <h2 className="text-xl font-bold">{c.label}</h2>
+            <Link href={`/${c.slug}`} className="text-sm text-neutral-400 hover:text-white">
+              전체보기 ›
+            </Link>
+          </div>
+          <ul className="scrollbar-none flex gap-3 overflow-x-auto pb-2">
+            {c.sections.flatMap((s) => s.works).slice(0, 8).map((work) => (
+              <li key={work.title} className="w-56 shrink-0 sm:w-64">
+                <Link href={`/${c.slug}`} className="group block">
+                  <div className="relative aspect-video overflow-hidden rounded-lg bg-neutral-900">
+                    <Image
+                      src={work.image}
+                      alt=""
+                      fill
+                      sizes="256px"
+                      className="object-cover transition duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  <p className="mt-2 truncate text-sm text-neutral-300 group-hover:text-white">{work.title}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </>
   );
 }

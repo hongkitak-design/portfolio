@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bellkong Portfolio",
-  description: "Bellkong 포트폴리오",
+  title: "BELLKONG Portfolio",
+  description: "BELLKONG 디자인 포트폴리오",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -23,7 +25,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <Header />
+        <main className="flex-1 pt-16">{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }
