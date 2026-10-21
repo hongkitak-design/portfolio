@@ -1,21 +1,21 @@
-import Image from "next/image";
-import type { Work } from "@/data/portfolio";
+import Link from "next/link";
+import SmartImage from "@/components/SmartImage";
+import type { Work } from "@/lib/schema";
 
-export default function WorkCard({ work }: { work: Work }) {
-  return (
+type Props = { work: Work; aspect?: string; sizes?: string };
+
+export default function WorkCard({ work, aspect = "aspect-square", sizes = "(max-width: 640px) 50vw, 25vw" }: Props) {
+  const card = (
     <article className="group cursor-pointer">
-      <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-900">
-        <Image
+      <div className={`relative overflow-hidden rounded-xl bg-neutral-900 ${aspect}`}>
+        <SmartImage
           src={work.image}
-          alt=""
           fill
-          sizes="(max-width: 640px) 50vw, 25vw"
+          sizes={sizes}
           className="object-cover transition duration-500 group-hover:scale-105"
         />
         {work.tag && (
-          <span className="absolute top-3 left-3 rounded bg-point px-2 py-0.5 text-[11px] font-black">
-            {work.tag}
-          </span>
+          <span className="absolute top-3 left-3 rounded bg-point px-2 py-0.5 text-[11px] font-black">{work.tag}</span>
         )}
       </div>
       <div className="mt-3">
@@ -25,4 +25,5 @@ export default function WorkCard({ work }: { work: Work }) {
       </div>
     </article>
   );
+  return work.href ? <Link href={work.href}>{card}</Link> : card;
 }

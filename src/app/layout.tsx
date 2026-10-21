@@ -1,7 +1,5 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { getSiteConfig } from "@/lib/store";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,10 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "NEXTU Portfolio",
-  description: "NEXTU 디자인 포트폴리오",
-};
+export async function generateMetadata() {
+  const { site } = await getSiteConfig();
+  return { title: site.title, description: site.description };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -25,11 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
-        <Header />
-        <main className="flex-1 pt-16">{children}</main>
-        <Footer />
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

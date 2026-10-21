@@ -1,13 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import PressLink from "@/components/PressLink";
-import { categories, profile } from "@/data/portfolio";
+import SmartImage from "@/components/SmartImage";
 
-export default function Header() {
+type Props = {
+  logo: string;
+  name: string;
+  email: string;
+  menu: { slug: string; label: string }[];
+};
+
+export default function Header({ logo, name, email, menu }: Props) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -26,10 +32,12 @@ export default function Header() {
     >
       <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-8 px-4 sm:px-6">
         <Link href="/" className="shrink-0 transition active:scale-95">
-          <Image src={profile.logo} alt={profile.name} width={3199} height={586} priority className="h-7 w-auto" />
+          <span className="relative block h-7 w-36">
+            <SmartImage src={logo} alt={name} fill priority sizes="144px" className="object-contain object-left" />
+          </span>
         </Link>
         <nav className="scrollbar-none flex flex-1 items-center gap-5 overflow-x-auto sm:gap-7">
-          {categories.map((c) => {
+          {menu.map((c) => {
             const active = pathname === `/${c.slug}`;
             return (
               <PressLink
@@ -50,7 +58,7 @@ export default function Header() {
           })}
         </nav>
         <a
-          href={`mailto:${profile.email}`}
+          href={`mailto:${email}`}
           className="hidden shrink-0 rounded-full bg-point px-4 py-1.5 text-sm font-semibold text-white transition active:scale-95 sm:block"
         >
           Contact

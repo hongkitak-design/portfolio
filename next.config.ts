@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "picsum.photos" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
   },
   turbopack: {
     rules: {
