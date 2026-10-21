@@ -18,7 +18,7 @@ async function AdminGate() {
   if (!adminConfigured()) {
     return (
       <div className="mx-auto max-w-md p-10 text-sm leading-relaxed text-neutral-300">
-        <h1 className="mb-4 text-xl font-bold">관리자 비밀번호가 설정되지 않았습니다</h1>
+        <h1 className="mb-4 text-xl font-bold">관리자 계정이 설정되지 않았습니다</h1>
         <p>
           환경변수 <code className="rounded bg-neutral-800 px-1">ADMIN_PASSWORD</code> 를 설정해 주세요. 로컬은{" "}
           <code className="rounded bg-neutral-800 px-1">.env.local</code>, 배포는 Vercel 프로젝트 설정 → Environment

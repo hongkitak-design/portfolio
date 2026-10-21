@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const COOKIE = "admin_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7일
 
-// 관리자 비밀번호는 환경변수 ADMIN_PASSWORD 로 설정합니다 (.env.local / Vercel 환경변수)
+// 관리자 아이디/비밀번호는 환경변수 ADMIN_USERNAME(기본 admin) / ADMIN_PASSWORD 로 설정합니다 (.env.local / Vercel 환경변수)
 export const adminConfigured = () => Boolean(process.env.ADMIN_PASSWORD);
 
 const secret = () => process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || "";
@@ -17,11 +17,14 @@ const safeEqual = (a: string, b: string) => {
   return ab.length === bb.length && timingSafeEqual(ab, bb);
 };
 
-export function checkPassword(input: string) {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) return false;
+export function checkCredentials(username: string, password: string) {
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+  if (!expectedPassword) return false;
+  const expectedUsername = process.env.ADMIN_USERNAME || "admin";
   // 길이가 달라도 비교 시간이 일정하도록 해시끼리 비교
-  return safeEqual(sign(`pw:${input}`), sign(`pw:${password}`));
+  const userOk = safeEqual(sign(`id:${username}`), sign(`id:${expectedUsername}`));
+  const passwordOk = safeEqual(sign(`pw:${password}`), sign(`pw:${expectedPassword}`));
+  return userOk && passwordOk;
 }
 
 export async function createSession() {

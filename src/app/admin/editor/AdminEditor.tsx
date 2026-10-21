@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { logout, resetConfig, saveConfig } from "@/app/admin/actions";
 import BlockEditor from "@/app/admin/editor/BlockEditor";
@@ -25,7 +24,6 @@ const CATEGORY_BLOCKS: BlockType[] = ["hero", "keywords", "banners", "works", "t
 type Props = { initialConfig: SiteConfig; storage: StorageMode; blob: boolean };
 
 export default function AdminEditor({ initialConfig, storage, blob }: Props) {
-  const router = useRouter();
   const [saved, setSaved] = useState(initialConfig);
   const [config, setConfig] = useState(initialConfig);
   const [view, setView] = useState<View>({ kind: "home" });
@@ -152,10 +150,7 @@ export default function AdminEditor({ initialConfig, storage, blob }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => startTransition(async () => {
-              await logout();
-              router.refresh();
-            })}
+            onClick={() => startTransition(() => logout())}
             className="px-2 text-xs text-neutral-500 hover:text-white"
           >
             로그아웃

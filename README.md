@@ -6,7 +6,7 @@ Next.js 16 + Tailwind 4 포트폴리오. 내용·이미지·레이아웃은 설�
 
 ```bash
 npm install
-cp .env.example .env.local   # ADMIN_PASSWORD 를 채워 넣기
+cp .env.example .env.local   # ADMIN_USERNAME / ADMIN_PASSWORD 를 채워 넣기
 npm run dev
 ```
 
@@ -33,6 +33,7 @@ DB·Blob 을 연결하지 않으면 로컬에서는 설정이 `.data/site.json`,
 2. Vercel 프로젝트 → **Storage** → **Blob** 생성 후 연결 (Public 스토어)
    → 이미지 업로드용 환경변수가 자동으로 들어옵니다.
 3. **Settings → Environment Variables** 에 추가
+   - `ADMIN_USERNAME`: 설정 페이지 아이디 (비워두면 `admin`)
    - `ADMIN_PASSWORD`: 설정 페이지 비밀번호
    - `ADMIN_SESSION_SECRET`: 아무 긴 랜덤 문자열 (예: `openssl rand -hex 32`)
 4. **Redeploy** 하면 `/admin` 에서 로그인할 수 있습니다.

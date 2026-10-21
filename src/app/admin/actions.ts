@@ -2,7 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { checkPassword, createSession, destroySession, isAdmin } from "@/lib/auth";
+import { checkCredentials, createSession, destroySession, isAdmin } from "@/lib/auth";
 import { createDefaultConfig } from "@/lib/defaults";
 import { siteConfigSchema, type SiteConfig } from "@/lib/schema";
 import { SITE_TAG, saveSiteConfig } from "@/lib/store";
@@ -10,14 +10,16 @@ import { SITE_TAG, saveSiteConfig } from "@/lib/store";
 export type LoginState = { error?: string };
 
 export async function login(_: LoginState, formData: FormData): Promise<LoginState> {
+  const username = String(formData.get("username") ?? "");
   const password = String(formData.get("password") ?? "");
-  if (!checkPassword(password)) return { error: "비밀번호가 올바르지 않습니다" };
+  if (!checkCredentials(username, password)) return { error: "아이디 또는 비밀번호가 올바르지 않습니다" };
   await createSession();
   redirect("/admin");
 }
 
 export async function logout() {
   await destroySession();
+  redirect("/admin");
 }
 
 export type SaveResult = { ok: true; config: SiteConfig } | { ok: false; error: string };
