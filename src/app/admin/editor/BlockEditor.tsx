@@ -37,6 +37,32 @@ const newSlide = (image: string) => ({
 
 const newWork = (image: string) => ({ id: newId(), title: "새 작업", description: "", image, meta: "" });
 
+const parseKeywords = (v: string) =>
+  v
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+// Keeps the raw text locally so a trailing comma survives until the next keyword is typed.
+function KeywordsInput({ keywords, onChange }: { keywords: string[]; onChange: (keywords: string[]) => void }) {
+  const [text, setText] = useState(() => keywords.join(", "));
+  const [synced, setSynced] = useState(keywords);
+  if (synced !== keywords) {
+    setSynced(keywords);
+    if (parseKeywords(text).join("\n") !== keywords.join("\n")) setText(keywords.join(", "));
+  }
+  return (
+    <TextInput
+      label="키워드 (쉼표로 구분)"
+      value={text}
+      onChange={(v) => {
+        setText(v);
+        onChange(parseKeywords(v));
+      }}
+    />
+  );
+}
+
 function BlockFields({ block, update }: { block: Block; update: Update }) {
   switch (block.type) {
     case "hero":
@@ -100,18 +126,7 @@ function BlockFields({ block, update }: { block: Block; update: Update }) {
         <>
           <LayoutPicker options={KEYWORD_LAYOUTS} value={block.layout} onChange={(layout) => update({ layout })} />
           <TextInput label="제목" value={block.title} onChange={(title) => update({ title })} />
-          <TextInput
-            label="키워드 (쉼표로 구분)"
-            value={block.keywords.join(", ")}
-            onChange={(v) =>
-              update({
-                keywords: v
-                  .split(",")
-                  .map((k) => k.trim())
-                  .filter(Boolean),
-              })
-            }
-          />
+          <KeywordsInput keywords={block.keywords} onChange={(keywords) => update({ keywords })} />
         </>
       );
     case "banners":
